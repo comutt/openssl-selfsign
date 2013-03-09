@@ -227,7 +227,7 @@ authorityKeyIdentifier=keyid,issuer
 basicConstraints = CA:FALSE
 nsCertType = server
 keyUsage = nonRepudiation, digitalSignature, keyEncipherment
-subjectAltName = DNS:comutt.jp
+subjectAltName = DNS.1:*.comutt.jp, DNS.2:comutt.jp
 
 [ v3_ca ]
 
