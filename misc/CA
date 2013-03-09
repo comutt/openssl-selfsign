@@ -32,8 +32,8 @@
 
 if [ -z "$OPENSSL" ]; then OPENSSL=openssl; fi
 
-DAYS="-days 365"	# 1 year
-CADAYS="-days 1095"	# 3 years
+DAYS="-days 3650"	# 10 years
+CADAYS="-days 3650"	# 10 years
 REQ="$OPENSSL req $SSLEAY_CONFIG"
 CA="$OPENSSL ca $SSLEAY_CONFIG"
 VERIFY="$OPENSSL verify"
@@ -53,13 +53,13 @@ case $i in
     ;;
 -newcert) 
     # create a certificate
-    $REQ -new -x509 -keyout newkey.pem -out newcert.pem $DAYS
+    $REQ -config ../openssl.cnf.req -new -x509 -keyout newkey.pem -out newcert.pem $DAYS
     RET=$?
     echo "Certificate is in newcert.pem, private key is in newkey.pem"
     ;;
 -newreq) 
     # create a certificate request
-    $REQ -new -keyout newkey.pem -out newreq.pem $DAYS
+    $REQ -config ../openssl.cnf.req -new -keyout newkey.pem -out newreq.pem $DAYS
     RET=$?
     echo "Request is in newreq.pem, private key is in newkey.pem"
     ;;
@@ -87,9 +87,9 @@ case $i in
 	    RET=$?
 	else
 	    echo "Making CA certificate ..."
-	    $REQ -new -keyout ${CATOP}/private/$CAKEY \
+	    $REQ -config ../openssl.cnf.ca -new -keyout ${CATOP}/private/$CAKEY \
 			   -out ${CATOP}/$CAREQ
-	    $CA -out ${CATOP}/$CACERT $CADAYS -batch \
+	    $CA -config ../openssl.cnf.ca -out ${CATOP}/$CACERT $CADAYS -batch \
 			   -keyfile ${CATOP}/private/$CAKEY -selfsign \
 			   -infiles ${CATOP}/$CAREQ 
 	    RET=$?
@@ -97,31 +97,31 @@ case $i in
     fi
     ;;
 -xsign)
-    $CA -policy policy_anything -infiles newreq.pem 
+    $CA -config ../openssl.cnf.sign -policy policy_anything -infiles newreq.pem 
     RET=$?
     ;;
 -sign|-signreq) 
-    $CA -policy policy_anything -out newcert.pem -infiles newreq.pem
+    $CA -config ../openssl.cnf.sign -policy policy_anything -out newcert.pem -infiles newreq.pem
     RET=$?
     cat newcert.pem
     echo "Signed certificate is in newcert.pem"
     ;;
 -signcert) 
     echo "Cert passphrase will be requested twice - bug?"
-    $X509 -x509toreq -in newreq.pem -signkey newreq.pem -out tmp.pem
-    $CA -policy policy_anything -out newcert.pem -infiles tmp.pem
+    $X509 -config ../openssl.cnf.sign -x509toreq -in newreq.pem -signkey newreq.pem -out tmp.pem
+    $CA -config ../openssl.cnf.sign -policy policy_anything -out newcert.pem -infiles tmp.pem
     cat newcert.pem
     echo "Signed certificate is in newcert.pem"
     ;;
 -verify) 
     shift
     if [ -z "$1" ]; then
-	    $VERIFY -CAfile $CATOP/$CACERT newcert.pem
+	    $VERIFY -config ../openssl.cnf.ca -CAfile $CATOP/$CACERT newcert.pem
 	    RET=$?
     else
 	for j
 	do
-	    $VERIFY -CAfile $CATOP/$CACERT $j
+	    $VERIFY -config ../openssl.cnf.ca -CAfile $CATOP/$CACERT $j
 	    if [ $? != 0 ]; then
 		    RET=$?
 	    fi
